@@ -1,0 +1,11 @@
+token_bot: YOUR_TOKEN_BOT
+db_name: DB_NAME
+event_types:
+  - SOME_EVENT_TYPE
+  - SOME_EVENT_TYPE
+users:
+  - SOME_USER
+  - SOME_USER
+admins:
+  - SOME_ADMIN
+  - SOME_ADMIN
