@@ -4,10 +4,22 @@
 # entregar informe sobre los días consumidos por usuario y como grupo
 # mejorar este código de mierda!
 
+# spreadsheet columns:
+# 0, date
+# 1, time
+# 2, chat_id
+# 3, user_email
+# 4, event_type
+# 5, date_start
+# 6, date_end
+# 7, approved
+
+
 require 'telegram/bot'
 require 'date'
 require 'sqlite3'
 require 'yaml'
+require './bot_spreadsheet'
 
 $cnfg = YAML::load_file('config.yml')
 
@@ -101,6 +113,32 @@ Telegram::Bot::Client.run(token) do |bot|
           db.execute "UPDATE Equipo SET fecha_inicio='#{d} 00:00:00' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL"
         else
           db.execute "UPDATE Equipo SET fecha_termino='#{d} 23:59:59' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL AND fecha_inicio IS NOT NULL"
+
+          results = db.execute "SELECT email, tipo, fecha_inicio, fecha_termino FROM equipo order by id desc limit 1;"
+
+          print results
+          fecha_1 = Time.now
+          # [[fecha_1, " " , " ", message.chat.id, "jbari@ciudadanointeligente.org", "Vacaciones", "2017-01-01 00:00:00", "2017-02-01 23:59:59"]]
+
+          insertable_results = {
+            values:[
+              [fecha_1, " ", " ", message.chat.id, results[0][0],
+            results[0][1], results[0][2], results[0][3] ]
+              ]
+          }
+          service = init_api
+          spreadsheet_id = '1jjOplhY9yJ7MMuaXSvJqAukNMcK0i155gMUzH6D-vzE'
+
+          range = 'bot_output!A:J'
+          # # majorDimension: "ROWS",
+          # values = {
+          #   values: [
+          #     ["300","300","300","300","300"]
+          #   ]
+          # }
+          # write service, spreadsheet_id, range, insertable_results
+          append service, spreadsheet_id, range, insertable_results
+
         end
         fi, ft = false
       elsif (fi||ft)
