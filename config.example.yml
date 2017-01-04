@@ -1,5 +1,7 @@
 token_bot: YOUR_TOKEN_BOT
 db_name: DB_NAME
+spreadsheet_id: URL
+spreadsheet_range: RANGE
 event_types:
   - SOME_EVENT_TYPE
   - SOME_EVENT_TYPE
