@@ -2,3 +2,4 @@ config.yml
 Gemfile.lock
 *.db
 client_secret.json
+*.swp
