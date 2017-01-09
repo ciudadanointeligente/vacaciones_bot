@@ -65,14 +65,17 @@ Telegram::Bot::Client.run(token) do |bot|
     #user_id
     u_id = message.from.id
     if u_id
+      #p u_id
       last_id = db.execute "SELECT id FROM Equipo WHERE user_id = #{u_id} ORDER BY id DESC LIMIT 1;"
+      #p "last_id : " + last_id.to_s
+      #last_id = 34
     end
 
     unless h.keys.include? u_id
       h[u_id] = {'e' => false, 'te' => false, 'fi' => false, 'ft' => false}
     end
 
-    p h
+    # p h
 
     case message.text
     when '/start'
@@ -123,11 +126,13 @@ Telegram::Bot::Client.run(token) do |bot|
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
         # db update
         d = DateTime.parse("#{message.text}").strftime("%Y-%m-%d") #transform from DD-MM-AAAA to AAAA-MM-DD
-        puts "debug d: " + d.to_s
-        puts u_id
+        # puts "debug d: " + d.to_s
+        # puts u_id
         if h[u_id]['fi']
           db.execute "UPDATE Equipo SET fecha_inicio='#{d} 00:00:00' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL"
         else
+          # p d
+          # p last_id
           db.execute "UPDATE Equipo SET fecha_termino='#{d} 23:59:59' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL AND fecha_inicio IS NOT NULL"
 
           results = db.execute "SELECT email, tipo, fecha_inicio, fecha_termino FROM equipo WHERE user_id = #{u_id} order by id desc limit 1;"
@@ -162,9 +167,6 @@ Telegram::Bot::Client.run(token) do |bot|
       elsif (h[u_id]['fi'] || h[u_id]['ft'] )
         txt = 'la fecha no es válida, el formato es DD-MM-AAAA'
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
-
-      else
-        p 'elseeeeeee'
       end
 
     end
