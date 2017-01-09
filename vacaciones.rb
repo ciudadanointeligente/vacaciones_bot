@@ -51,7 +51,8 @@ end
 
 def evento_valido message
   t_eventos = $cnfg["event_types"]
-  if t_eventos.include? message.text
+  # if t_eventos.downcase.include? message.text.downcase
+  if t_eventos.map{|i| i.downcase}.include?  message.text.downcase
     return true
   end
   return false
@@ -122,6 +123,8 @@ Telegram::Bot::Client.run(token) do |bot|
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
         # db update
         d = DateTime.parse("#{message.text}").strftime("%Y-%m-%d") #transform from DD-MM-AAAA to AAAA-MM-DD
+        puts "debug d: " + d.to_s
+        puts u_id
         if h[u_id]['fi']
           db.execute "UPDATE Equipo SET fecha_inicio='#{d} 00:00:00' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL"
         else
@@ -159,7 +162,11 @@ Telegram::Bot::Client.run(token) do |bot|
       elsif (h[u_id]['fi'] || h[u_id]['ft'] )
         txt = 'la fecha no es válida, el formato es DD-MM-AAAA'
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
+
+      else
+        p 'elseeeeeee'
       end
+
     end
   end
 end
