@@ -57,6 +57,7 @@ def evento_valido message
   return false
 end
 
+h = {}
 Telegram::Bot::Client.run(token) do |bot|
   e, te, fi, ft = false
   bot.listen do |message|
@@ -66,15 +67,23 @@ Telegram::Bot::Client.run(token) do |bot|
       last_id = db.execute "SELECT id FROM Equipo WHERE user_id = #{u_id} ORDER BY id DESC LIMIT 1;"
     end
 
+    unless h.keys.include? u_id
+      h[u_id] = {'e' => false, 'te' => false, 'fi' => false, 'ft' => false}
+    end
+
+    p h
+
     case message.text
     when '/start'
       bot.api.send_message(chat_id: message.chat.id, text:"Hola\nBienvenido al robot gestionador de <i>Vacaciones</i> y <i>Administrativos</i>\nPara poder ayudarte con tus días necesito obtener un poco de información, para lo cual necesito que me envíes tu /email el /tipo_evento la /fecha_inicio y /fecha_termino (msgId:#{message.message_id})", parse_mode: "HTML")
     when '/email'
       bot.api.send_message(chat_id: message.chat.id, text:"mandame tu _correo@ciudadanointeligente.org_", parse_mode: "Markdown")
-      e = true
+      h[u_id]['e']=true
+      #e = true
     when '/tipo_evento'
       bot.api.send_message(chat_id: message.chat.id, text: "Enviame _Vacaciones_ o _Administrativo_", parse_mode: "Markdown" )
-      te = true
+      #te = true
+      h[u_id]['te']=true
     when '/fecha_inicio'
       bot.api.send_message(chat_id: message.chat.id, text: "Enviame la fecha de inicio en formato _DD-MM-AAAA_, x ejemplo _15-09-2016_", parse_mode: "Markdown" )
       fi = true
@@ -82,26 +91,28 @@ Telegram::Bot::Client.run(token) do |bot|
       bot.api.send_message(chat_id: message.chat.id, text: "Enviame la fecha de término en formato _DD-MM-AAAA_, x ejemplo _20-09-2016_", parse_mode: "Markdown" )
       ft = true
     else
-      if (e && valid_email(message))
+      if (h[u_id]['e'] && valid_email(message))
         txt = "email: #{message.text}.\nAhora enviame el tipo de evento con el comando <i>/tipo_evento</i>"
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
-        e = false
-
+        #e = false
+        h[u_id]['e']=true
         #db insert
         db.execute "INSERT INTO Equipo (id, user_id, email) VALUES (NULL, #{u_id}, '#{message.text}');"
-      elsif e
+      elsif h[u_id]['e']
         txt = "El correo que me enviaste no es válido o no se encuentra dentro de los permitidos, seguro que me enviaste el comando correcto y luego tu correo?"
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}")
       end
-      if (te && evento_valido(message))
+      if (h[u_id]['te'] && evento_valido(message))
         txt = "evento: #{message.text}.\nAhora enviame la fecha de inicio con el comando <i>/fecha_inicio</i>"
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
-        te = false
+        #te = false
+        h[u_id]['te']=true
         #db update
         db.execute "UPDATE Equipo SET tipo='#{message.text}' WHERE id = #{last_id[0][0]}"
       end
-      if ((fi || ft) && valid_date(message))
-        if fi
+      # if ((fi || ft) && valid_date(message))
+      if ((h[u_id]['fi'] || h[u_id]['fi']) && valid_date(message))
+        if h[u_id]['fi']
           txt = "fecha: #{message.text}.\nAhora enviame la fecha de termino con el comando <i>/fecha_termino</i>"
         else
           txt = "fecha: #{message.text}.\nEstamos procesando tu solicitud, pronto nos comunicaremos contigo."
@@ -109,7 +120,7 @@ Telegram::Bot::Client.run(token) do |bot|
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
         # db update
         d = DateTime.parse("#{message.text}").strftime("%Y-%m-%d") #transform from DD-MM-AAAA to AAAA-MM-DD
-        if fi
+        if h[u_id]['fi']
           db.execute "UPDATE Equipo SET fecha_inicio='#{d} 00:00:00' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL"
         else
           db.execute "UPDATE Equipo SET fecha_termino='#{d} 23:59:59' WHERE id = #{last_id[0][0]} AND tipo IS NOT NULL AND fecha_inicio IS NOT NULL"
@@ -127,9 +138,9 @@ Telegram::Bot::Client.run(token) do |bot|
               ]
           }
           service = init_api
-          spreadsheet_id = '1jjOplhY9yJ7MMuaXSvJqAukNMcK0i155gMUzH6D-vzE'
+          spreadsheet_id = $cnfg["spreadsheet_id"]
 
-          range = 'bot_output!A:J'
+          range = $cnfg["spreadsheet_range"]
           # # majorDimension: "ROWS",
           # values = {
           #   values: [
@@ -140,8 +151,10 @@ Telegram::Bot::Client.run(token) do |bot|
           append service, spreadsheet_id, range, insertable_results
 
         end
-        fi, ft = false
-      elsif (fi||ft)
+        h[u_id]['fi'] = false
+        h[u_id]['ft'] = false
+        # fi, ft = false
+      elsif (h[u_id]['fi'] ||h[u_id]['ft'] )
         txt = 'la fecha no es válida, el formato es DD-MM-AAAA'
         bot.api.send_message(chat_id: message.chat.id, text: "#{txt}", parse_mode: "HTML")
       end
