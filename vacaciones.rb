@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
 # to-do
 # calcular días de vacaciones usados sin considerar fin de semana y festivos
 # calcular días restantes
